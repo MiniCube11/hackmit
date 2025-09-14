@@ -200,33 +200,124 @@ app.get('/', (req, res) => {
           failCount++;
         }
 
-        // Mock tests for other vulnerabilities (keeping existing logic)
-        for(let i=1;i<vulnTypes.length;i++){
-          const statusSpan = document.getElementById('status'+i);
-          const bar = document.getElementById('bar'+i);
+        // API Key Leaks test (test 2)
+        const apiKeyStatusSpan = document.getElementById('status1');
+        const apiKeyBar = document.getElementById('bar1');
+        const apiKeyFeedback = document.getElementById('fb1');
 
-          let w=0;
-          const interval = setInterval(()=>{ w+=10; if(w<=100) bar.style.width=w+'%'; }, 200);
+        let w2=0;
+        const apiKeyInterval = setInterval(()=>{ w2+=5; if(w2<=95) apiKeyBar.style.width=w2+'%'; }, 200);
 
-          await new Promise(r=>setTimeout(r,1500));
+        await new Promise(r=>setTimeout(r, 10000)); // 10 seconds like SQL test
 
-          clearInterval(interval);
-          bar.style.width='100%';
+        clearInterval(apiKeyInterval);
+        apiKeyBar.style.width='100%';
 
-          const passed = (i % 2 === 0);
+        // Simulate API Key Leaks detection (mock result)
+        const apiKeyVulnerable = true; // Mock: always vulnerable for demo
+        if (apiKeyVulnerable) {
+          apiKeyStatusSpan.className = 'state state-failed';
+          apiKeyStatusSpan.textContent = 'Vulnerable';
+          apiKeyBar.style.display = 'none';
+          
+          apiKeyFeedback.innerHTML = 
+            '<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-top: 8px;">' +
+              '<div style="color: #dc2626; font-weight: bold; margin-bottom: 8px;">⚠️ API Key Leak Vulnerability Detected</div>' +
+              '<div style="color: #374151; margin-bottom: 4px;"><strong>Type:</strong> API Key Exposure</div>' +
+              '<div style="color: #374151; margin-bottom: 4px;"><strong>Status:</strong> <span style="color: #dc2626;">Failed</span></div>' +
+              '<div style="color: #374151;"><strong>Details:</strong> API key "sk-1234567890abcdef" found exposed in JavaScript source code. This key has access to sensitive data and should be immediately revoked and regenerated.</div>' +
+            '</div>';
+          failCount++;
+        } else {
+          apiKeyStatusSpan.className = 'state state-success';
+          apiKeyStatusSpan.textContent = 'Secure';
+          apiKeyBar.style.display = 'none';
+          apiKeyFeedback.innerHTML = 
+            '<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-top: 8px;">' +
+              '<div style="color: #16a34a; font-weight: bold; margin-bottom: 4px;">✅ No API Key Leaks Found</div>' +
+              '<div style="color: #374151;">No exposed API keys detected in the application.</div>' +
+            '</div>';
+          passCount++;
+        }
 
-          if(passed){
-            statusSpan.className = 'state state-success';
-            statusSpan.textContent = 'Success';
-            bar.style.display = 'none';
-            passCount++;
-          } else {
-            statusSpan.className = 'state state-failed';
-            statusSpan.textContent = 'Failed';
-            bar.style.display = 'none';
-            document.getElementById('fb'+i).innerText = 'Example issue detected in '+vulnTypes[i];
-            failCount++;
-          }
+        // CSRF test (test 3)
+        const csrfStatusSpan = document.getElementById('status2');
+        const csrfBar = document.getElementById('bar2');
+        const csrfFeedback = document.getElementById('fb2');
+
+        let w3=0;
+        const csrfInterval = setInterval(()=>{ w3+=5; if(w3<=95) csrfBar.style.width=w3+'%'; }, 200);
+
+        await new Promise(r=>setTimeout(r, 10000)); // 10 seconds like SQL test
+
+        clearInterval(csrfInterval);
+        csrfBar.style.width='100%';
+
+        // Simulate CSRF detection (mock result)
+        const csrfVulnerable = false; // Mock: secure for demo
+        if (csrfVulnerable) {
+          csrfStatusSpan.className = 'state state-failed';
+          csrfStatusSpan.textContent = 'Vulnerable';
+          csrfBar.style.display = 'none';
+          
+          csrfFeedback.innerHTML = 
+            '<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-top: 8px;">' +
+              '<div style="color: #dc2626; font-weight: bold; margin-bottom: 8px;">⚠️ CSRF Vulnerability Detected</div>' +
+              '<div style="color: #374151; margin-bottom: 4px;"><strong>Type:</strong> Cross-Site Request Forgery</div>' +
+              '<div style="color: #374151; margin-bottom: 4px;"><strong>Status:</strong> <span style="color: #dc2626;">Failed</span></div>' +
+              '<div style="color: #374151;"><strong>Details:</strong> Forms lack CSRF tokens, allowing attackers to perform unauthorized actions on behalf of authenticated users.</div>' +
+            '</div>';
+          failCount++;
+        } else {
+          csrfStatusSpan.className = 'state state-success';
+          csrfStatusSpan.textContent = 'Secure';
+          csrfBar.style.display = 'none';
+          csrfFeedback.innerHTML = 
+            '<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-top: 8px;">' +
+              '<div style="color: #16a34a; font-weight: bold; margin-bottom: 4px;">✅ CSRF Protection Active</div>' +
+              '<div style="color: #374151;">CSRF tokens are properly implemented and validated.</div>' +
+            '</div>';
+          passCount++;
+        }
+
+        // XSS test (test 4)
+        const xssStatusSpan = document.getElementById('status3');
+        const xssBar = document.getElementById('bar3');
+        const xssFeedback = document.getElementById('fb3');
+
+        let w4=0;
+        const xssInterval = setInterval(()=>{ w4+=5; if(w4<=95) xssBar.style.width=w4+'%'; }, 200);
+
+        await new Promise(r=>setTimeout(r, 10000)); // 10 seconds like SQL test
+
+        clearInterval(xssInterval);
+        xssBar.style.width='100%';
+
+        // Simulate XSS detection (mock result)
+        const xssVulnerable = true; // Mock: vulnerable for demo
+        if (xssVulnerable) {
+          xssStatusSpan.className = 'state state-failed';
+          xssStatusSpan.textContent = 'Vulnerable';
+          xssBar.style.display = 'none';
+          
+          xssFeedback.innerHTML = 
+            '<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-top: 8px;">' +
+              '<div style="color: #dc2626; font-weight: bold; margin-bottom: 8px;">⚠️ XSS Vulnerability Detected</div>' +
+              '<div style="color: #374151; margin-bottom: 4px;"><strong>Type:</strong> Cross-Site Scripting</div>' +
+              '<div style="color: #374151; margin-bottom: 4px;"><strong>Status:</strong> <span style="color: #dc2626;">Failed</span></div>' +
+              '<div style="color: #374151;"><strong>Details:</strong> Reflected XSS vulnerability found in search parameter. User input is not properly sanitized and can execute malicious scripts.</div>' +
+            '</div>';
+          failCount++;
+        } else {
+          xssStatusSpan.className = 'state state-success';
+          xssStatusSpan.textContent = 'Secure';
+          xssBar.style.display = 'none';
+          xssFeedback.innerHTML = 
+            '<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-top: 8px;">' +
+              '<div style="color: #16a34a; font-weight: bold; margin-bottom: 4px;">✅ XSS Protection Active</div>' +
+              '<div style="color: #374151;">Input sanitization and output encoding are properly implemented.</div>' +
+            '</div>';
+          passCount++;
         }
 
         document.getElementById('summary').innerText = 'Passed: '+passCount+' | Failed: '+failCount;
