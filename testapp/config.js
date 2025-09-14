@@ -1,4 +1,4 @@
 module.exports = {
-    API_KEY: "SUPER_SECRET_KEY_12345",
+    API_KEY: "Secret_Key_12345",
     DB_FILE: "database.sqlite"
 };
