@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const axios = require('axios');
 
 const app = express();
 app.use(bodyParser.json());
@@ -57,6 +58,31 @@ function page(title, bodyHtml) {
 </html>`;
 }
 
+// -------------------- API Endpoints --------------------
+app.post('/api/run-sql-test', async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ error: 'URL is required' });
+    }
+
+    console.log(`Running SQL injection test on: ${url}`);
+    const response = await axios.get(`http://localhost:3001/run-task?url=${encodeURIComponent(url)}`);
+    
+    res.json({
+      success: true,
+      data: response.data
+    });
+  } catch (error) {
+    console.error('Error calling backend:', error.message);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to run SQL injection test',
+      details: error.message
+    });
+  }
+});
+
 // -------------------- Main Security Scanner --------------------
 app.get('/', (req, res) => {
   const html = `
@@ -94,7 +120,54 @@ app.get('/', (req, res) => {
 
         let passCount = 0, failCount = 0;
 
-        for(let i=0;i<vulnTypes.length;i++){
+        // Run SQL Injection test (real backend call)
+        const sqlStatusSpan = document.getElementById('status0');
+        const sqlBar = document.getElementById('bar0');
+        const sqlFeedback = document.getElementById('fb0');
+
+        // Show progress for SQL injection test
+        let w=0;
+        const sqlInterval = setInterval(()=>{ w+=5; if(w<=95) sqlBar.style.width=w+'%'; }, 200);
+
+        try {
+          const response = await fetch('/api/run-sql-test', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url: target })
+          });
+
+          const result = await response.json();
+          
+          clearInterval(sqlInterval);
+          sqlBar.style.width='100%';
+
+          if (result.success && result.data.success) {
+            sqlStatusSpan.className = 'state state-success';
+            sqlStatusSpan.textContent = 'Vulnerable';
+            sqlBar.style.display = 'none';
+            sqlFeedback.innerHTML = '<strong>SQL Injection detected:</strong><br>' + result.data.result;
+            failCount++;
+          } else {
+            sqlStatusSpan.className = 'state state-success';
+            sqlStatusSpan.textContent = 'Secure';
+            sqlBar.style.display = 'none';
+            sqlFeedback.textContent = 'No SQL injection vulnerabilities found';
+            passCount++;
+          }
+        } catch (error) {
+          clearInterval(sqlInterval);
+          sqlBar.style.width='100%';
+          sqlStatusSpan.className = 'state state-failed';
+          sqlStatusSpan.textContent = 'Error';
+          sqlBar.style.display = 'none';
+          sqlFeedback.textContent = 'Error running SQL injection test: ' + error.message;
+          failCount++;
+        }
+
+        // Mock tests for other vulnerabilities (keeping existing logic)
+        for(let i=1;i<vulnTypes.length;i++){
           const statusSpan = document.getElementById('status'+i);
           const bar = document.getElementById('bar'+i);
 

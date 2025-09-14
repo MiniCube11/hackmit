@@ -6,6 +6,20 @@ require('dotenv').config();
 
 const app = express();
 
+// Enable CORS for all routes
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
+app.use(express.json());
+
 // await page.fill('input[name="username"]', "' OR 1=1; --");
 
 // //  Enter a placeholder password
@@ -20,10 +34,13 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 app.get('/run-task', async (req, res) => {
-  const browser = await chromium.launch({ headless: false });
-  const page = await browser.newPage();
+  try {
+    const targetUrl = req.query.url || 'http://localhost:3000/';
+    
+    const browser = await chromium.launch({ headless: false });
+    const page = await browser.newPage();
 
-  await page.goto('http://localhost:3000/');
+    await page.goto(targetUrl);
 
   // 5 iterations to run attack
   for (let i = 0; i < 5; i++) {
@@ -77,12 +94,22 @@ app.get('/run-task', async (req, res) => {
   // Wait 10 seconds before closing the browser
   await new Promise(resolve => setTimeout(resolve, 3000));
   
-  await browser.close();
-  res.send({ 
-    result: analysis,
-    analysis: analysis,
-    pageContent: finalPageContent
-  });
+    await browser.close();
+    res.send({ 
+      success: true,
+      result: analysis,
+      analysis: analysis,
+      pageContent: finalPageContent,
+      targetUrl: targetUrl
+    });
+  } catch (error) {
+    console.error('Error running SQL injection test:', error);
+    res.status(500).send({ 
+      success: false,
+      error: error.message,
+      result: 'Error occurred during SQL injection testing'
+    });
+  }
 });
 
 app.listen(3001, () => console.log('Server running on port 3001'));
