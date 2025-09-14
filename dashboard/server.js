@@ -346,30 +346,21 @@ app.get('/education', (req, res) => {
     <script>
       const questions = [
         {
-          url: 'https://example.com',
+          url: 'http://localhost:3002',
+          results: [
+            {vuln:false, reason:"Safe from SQL Injection"},
+            {vuln:true, reason:"API key found exposed in JavaScript source code"},
+            {vuln:false, reason:"CSRF protection active"},
+            {vuln:true, reason:"XSS vulnerability found in search parameter"}
+          ]
+        },
+        {
+          url: 'http://localhost:3000',
           results: [
             {vuln:true, reason:"User input not sanitized, vulnerable to SQL injection"},
             {vuln:false, reason:"No API keys exposed in the page"},
             {vuln:true, reason:"No CSRF token present on forms"},
             {vuln:false, reason:"XSS filters are in place"}
-          ]
-        },
-        {
-          url: 'https://test.com',
-          results: [
-            {vuln:false, reason:"SQL parameters properly sanitized"},
-            {vuln:true, reason:"API key exposed in HTML source"},
-            {vuln:false, reason:"CSRF tokens are present"},
-            {vuln:true, reason:"XSS vulnerability in search field"}
-          ]
-        },
-        {
-          url: 'https://demo.com',
-          results: [
-            {vuln:true, reason:"Login form missing input validation"},
-            {vuln:true, reason:"API token visible in JS"},
-            {vuln:false, reason:"CSRF token present"},
-            {vuln:false, reason:"XSS filters active"}
           ]
         }
       ];
