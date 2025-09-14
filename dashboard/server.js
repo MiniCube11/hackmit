@@ -12,9 +12,10 @@ function page(title, bodyHtml) {
   <title>${title}</title>
   <style>
     body { font-family: system-ui, sans-serif; background:#f4f7fb; margin:0; padding:0; }
+    nav { background:#2563eb; padding:12px 24px; display:flex; gap:12px; }
+    nav a { color:white; text-decoration:none; font-weight:600; }
     .wrap { display:flex; justify-content:center; padding:40px; }
-    .card { background:white; padding:32px; border-radius:16px; width:100%; max-width:820px;
-            box-shadow:0 8px 28px rgba(0,0,0,0.1); }
+    .card { background:white; padding:32px; border-radius:16px; width:100%; max-width:820px; box-shadow:0 8px 28px rgba(0,0,0,0.1); }
     h1 { margin-top:0; font-size:24px; }
     p { margin-bottom:20px; color:#4b5563; }
     .btn { padding:12px 20px; border:none; border-radius:10px; background:#2563eb; color:white; 
@@ -32,9 +33,21 @@ function page(title, bodyHtml) {
     .bar { height:6px; width:100px; background:#e5e7eb; border-radius:4px; overflow:hidden; display:inline-block; vertical-align:middle; }
     .bar-fill { height:100%; width:0%; background:#2563eb; transition:width 0.4s ease; }
     .summary { margin-top:24px; font-weight:bold; font-size:15px; }
+    .checkbox-group { display:flex; flex-direction:column; gap:8px; margin-top:12px; margin-bottom:16px; }
+    .feedback { margin-top:12px; font-weight:bold; }
+    .correct { color:green; font-weight:bold; }
+    .incorrect { color:red; font-weight:bold; }
+    .nav-btns { margin-top:16px; display:flex; justify-content:space-between; font-size:16px; font-weight:bold; color:#2563eb; cursor:pointer; }
+    .nav-btns span { display:flex; align-items:center; gap:4px; }
+    .arrow { transition: transform 0.3s; }
+    .arrow.flip { transform: rotate(90deg); }
   </style>
 </head>
 <body>
+  <nav>
+    <a href="/">Scanner</a>
+    <a href="/education">Education</a>
+  </nav>
   <div class="wrap">
     <div class="card">
       ${bodyHtml}
@@ -44,6 +57,7 @@ function page(title, bodyHtml) {
 </html>`;
 }
 
+// -------------------- Main Security Scanner --------------------
 app.get('/', (req, res) => {
   const html = `
     <h1>Security Scanner</h1>
@@ -84,17 +98,14 @@ app.get('/', (req, res) => {
           const statusSpan = document.getElementById('status'+i);
           const bar = document.getElementById('bar'+i);
 
-          // Animate progress bar
           let w=0;
           const interval = setInterval(()=>{ w+=10; if(w<=100) bar.style.width=w+'%'; }, 200);
 
-          // Fake scan delay
           await new Promise(r=>setTimeout(r,1500));
 
           clearInterval(interval);
           bar.style.width='100%';
 
-          // Mock result: alternate pass/fail
           const passed = (i % 2 === 0);
 
           if(passed){
@@ -118,4 +129,101 @@ app.get('/', (req, res) => {
   res.send(page("Security Scanner", html));
 });
 
-app.listen(3000, ()=> console.log("Scanner UI running at http://localhost:3000"));
+// -------------------- Educational Scanner --------------------
+app.get('/education', (req, res) => {
+  const html = `
+    <h1>Educational Scanner</h1>
+    <p>Try to identify which vulnerabilities exist for the target URL.</p>
+    <div>
+      <strong>Target URL:</strong> <span id="eduUrl"></span>
+    </div>
+    <div class="checkbox-group" id="vulnOptions"></div>
+    <button class="btn" onclick="checkSelections()">Submit Answers</button>
+    <div id="eduFeedback"></div>
+    <div class="nav-btns">
+      <span onclick="prevQuestion()"><span class="arrow">⬅</span> Back</span>
+      <span onclick="nextQuestion()">Next <span class="arrow">➡</span></span>
+    </div>
+
+    <script>
+      const questions = [
+        {
+          url: 'https://example.com',
+          results: [
+            {vuln:true, reason:"User input not sanitized, vulnerable to SQL injection"},
+            {vuln:false, reason:"No API keys exposed in the page"},
+            {vuln:true, reason:"No CSRF token present on forms"},
+            {vuln:false, reason:"XSS filters are in place"}
+          ]
+        },
+        {
+          url: 'https://test.com',
+          results: [
+            {vuln:false, reason:"SQL parameters properly sanitized"},
+            {vuln:true, reason:"API key exposed in HTML source"},
+            {vuln:false, reason:"CSRF tokens are present"},
+            {vuln:true, reason:"XSS vulnerability in search field"}
+          ]
+        },
+        {
+          url: 'https://demo.com',
+          results: [
+            {vuln:true, reason:"Login form missing input validation"},
+            {vuln:true, reason:"API token visible in JS"},
+            {vuln:false, reason:"CSRF token present"},
+            {vuln:false, reason:"XSS filters active"}
+          ]
+        }
+      ];
+
+      let currentQ = 0;
+
+      function loadQuestion(qIndex){
+        document.getElementById('eduUrl').textContent = questions[qIndex].url;
+        const vulnOptionsDiv = document.getElementById('vulnOptions');
+        vulnOptionsDiv.innerHTML = '';
+        questions[qIndex].results.forEach((res, i)=>{
+          const label = document.createElement('label');
+          label.innerHTML = '<input type="checkbox" id="edu'+i+'"> ' + ["SQL Injection","API Key Leaks","CSRF","XSS"][i];
+          vulnOptionsDiv.appendChild(label);
+        });
+        document.getElementById('eduFeedback').innerHTML = '';
+      }
+
+      function checkSelections(){
+        const feedbackDiv = document.getElementById('eduFeedback');
+        const results = questions[currentQ].results;
+        let table = '<table><tr><th>#</th><th>Vulnerability</th><th>Actual</th><th>Reason</th><th>Your Answer</th></tr>';
+        results.forEach((res, i)=>{
+          const selected = document.getElementById('edu'+i).checked;
+          const correct = selected === res.vuln;
+          table += '<tr>' +
+                   '<td>'+(i+1)+'</td>' +
+                   '<td>'+["SQL Injection","API Key Leaks","CSRF","XSS"][i]+'</td>' +
+                   '<td>' + (res.vuln ? 'Vulnerable' : 'Not Vulnerable') + '</td>' +
+                   '<td>' + res.reason + '</td>' +
+                   '<td class="' + (correct ? 'correct' : 'incorrect') + '">' + (correct ? 'Correct' : 'Incorrect') + '</td>' +
+                   '</tr>';
+        });
+        table += '</table>';
+        feedbackDiv.innerHTML = table;
+      }
+
+      function nextQuestion(){
+        currentQ = (currentQ + 1) % questions.length;
+        loadQuestion(currentQ);
+      }
+
+      function prevQuestion(){
+        currentQ = (currentQ - 1 + questions.length) % questions.length;
+        loadQuestion(currentQ);
+      }
+
+      // Initial load
+      loadQuestion(currentQ);
+    </script>
+  `;
+  res.send(page("Educational Scanner", html));
+});
+
+app.listen(3000, ()=> console.log("App running at http://localhost:3000"));
