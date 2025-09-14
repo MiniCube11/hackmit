@@ -87,7 +87,7 @@ app.post('/api/run-sql-test', async (req, res) => {
 // -------------------- Main Security Scanner --------------------
 app.get('/', (req, res) => {
   const html = `
-    <h1>Security Scanner</h1>
+    <h1>Fortify</h1>
     <p>Enter a target URL and run vulnerability checks against common issues.</p>
     <input id="urlInput" class="input" placeholder="https://example.com" />
     <button class="btn" onclick="runTests()">Run Tests</button>
@@ -324,7 +324,7 @@ app.get('/', (req, res) => {
       }
     </script>
   `;
-  res.send(page("Security Scanner", html));
+  res.send(page("Fortify", html));
 });
 
 // -------------------- Educational Scanner --------------------
