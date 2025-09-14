@@ -25,8 +25,9 @@ function page(title, bodyHtml) {
     .input { padding:12px; border:1px solid #d1d5db; border-radius:10px; width:100%; 
              box-sizing:border-box; margin-bottom:24px; }
     table { width:100%; border-collapse:collapse; margin-top:24px; }
-    th, td { padding:12px; border-bottom:1px solid #eee; text-align:left; font-size:14px; vertical-align:middle; }
+    th, td { padding:12px; border-bottom:1px solid #eee; text-align:left; font-size:14px; vertical-align:top; }
     th { background:#f9fafb; font-weight:600; }
+    td:nth-child(4) { max-width: 400px; word-wrap: break-word; }
     .state { font-weight:600; display:flex; align-items:center; gap:6px; }
     .state-running { color:orange; }
     .state-success { color:green; }
@@ -144,16 +145,45 @@ app.get('/', (req, res) => {
           sqlBar.style.width='100%';
 
           if (result.success && result.data.success) {
-            sqlStatusSpan.className = 'state state-success';
+            sqlStatusSpan.className = 'state state-failed';
             sqlStatusSpan.textContent = 'Vulnerable';
             sqlBar.style.display = 'none';
-            sqlFeedback.innerHTML = '<strong>SQL Injection detected:</strong><br>' + result.data.result;
+            
+            // Parse and format the result nicely
+            let formattedResult = result.data.result;
+            try {
+              // Try to parse as JSON and format it nicely
+              const parsedResult = JSON.parse(result.data.result);
+              if (Array.isArray(parsedResult) && parsedResult.length > 0) {
+                const vuln = parsedResult[0];
+                formattedResult = 
+                  '<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-top: 8px;">' +
+                    '<div style="color: #dc2626; font-weight: bold; margin-bottom: 8px;">⚠️ SQL Injection Vulnerability Detected</div>' +
+                    '<div style="color: #374151; margin-bottom: 4px;"><strong>Type:</strong> ' + (vuln.type || 'SQL Injection') + '</div>' +
+                    '<div style="color: #374151; margin-bottom: 4px;"><strong>Status:</strong> <span style="color: #dc2626;">' + (vuln.state || 'Failed') + '</span></div>' +
+                    '<div style="color: #374151;"><strong>Details:</strong> ' + (vuln.feedback || vuln.reason || 'Vulnerability confirmed') + '</div>' +
+                  '</div>';
+              }
+            } catch (e) {
+              // If not JSON, display as formatted text
+              formattedResult = 
+                '<div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px; margin-top: 8px;">' +
+                  '<div style="color: #dc2626; font-weight: bold; margin-bottom: 8px;">⚠️ SQL Injection Vulnerability Detected</div>' +
+                  '<div style="color: #374151; white-space: pre-wrap;">' + result.data.result + '</div>' +
+                '</div>';
+            }
+            
+            sqlFeedback.innerHTML = formattedResult;
             failCount++;
           } else {
             sqlStatusSpan.className = 'state state-success';
             sqlStatusSpan.textContent = 'Secure';
             sqlBar.style.display = 'none';
-            sqlFeedback.textContent = 'No SQL injection vulnerabilities found';
+            sqlFeedback.innerHTML = 
+              '<div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-top: 8px;">' +
+                '<div style="color: #16a34a; font-weight: bold; margin-bottom: 4px;">✅ No SQL Injection Vulnerabilities Found</div>' +
+                '<div style="color: #374151;">The application appears to be protected against SQL injection attacks.</div>' +
+              '</div>';
             passCount++;
           }
         } catch (error) {
@@ -162,7 +192,11 @@ app.get('/', (req, res) => {
           sqlStatusSpan.className = 'state state-failed';
           sqlStatusSpan.textContent = 'Error';
           sqlBar.style.display = 'none';
-          sqlFeedback.textContent = 'Error running SQL injection test: ' + error.message;
+          sqlFeedback.innerHTML = 
+            '<div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 12px; margin-top: 8px;">' +
+              '<div style="color: #d97706; font-weight: bold; margin-bottom: 4px;">⚠️ Error Running Test</div>' +
+              '<div style="color: #374151;">' + error.message + '</div>' +
+            '</div>';
           failCount++;
         }
 
